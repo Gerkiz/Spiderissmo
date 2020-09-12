@@ -1,0 +1,12 @@
+{
+  "name": "Spiderissmo",
+  "version": "1.0.1",
+  "title": "Spiderissmo",
+  "author": "Gerkiz",
+  "contact": "Gerkiz#0001",
+  "description": "This mod adds a surface to cars, tanks and spidertrons.",
+  "dependencies": [
+    "base >= 0.17"
+  ],
+  "factorio_version": "1.0"
+}
