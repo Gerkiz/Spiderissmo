@@ -727,6 +727,10 @@ function Public.create_car_room(ic, car)
     local entity_name = car.name
     local area = car_areas[entity_name]
 
+    if not area then
+        return print('Spiderissmo: Missing Area?')
+    end
+
     local main_tile_name = 'black-refined-concrete'
 
     local tiles = {}
@@ -844,7 +848,7 @@ function Public.create_car(ic, event)
     end
 
     local car_areas = ic.car_areas
-    local car_area = car_areas[ce.name]
+    local car_area = car_areas[ce.type]
 
     ic.cars[un] = {
         entity = ce,
@@ -854,7 +858,7 @@ function Public.create_car(ic, event)
         },
         doors = {},
         owner = player.index,
-        name = ce.name
+        name = ce.type
     }
 
     local car = ic.cars[un]
