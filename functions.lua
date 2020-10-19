@@ -648,7 +648,7 @@ function Public.kill_car(ic, entity)
 
     local entity_type = ic.entity_type
 
-    if not entity_type[entity.name] then
+    if not entity_type[entity.type] then
         return
     end
     local car = ic.cars[entity.unit_number]
@@ -813,7 +813,7 @@ function Public.create_car(ic, event)
         return
     end
 
-    if not entity_type[ce.name] then
+    if not entity_type[ce.type] then
         return
     end
 
