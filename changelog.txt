@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.2
+Date: 2020-10-19
+  Added:
+    - Allowed for entity types that are of same type to be constructed.
+    - Fixed that minimap did not pop up when entering a vehicle.
+---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 2020-09-12
   Added:
