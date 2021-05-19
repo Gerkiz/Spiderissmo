@@ -18,14 +18,11 @@ local function on_entity_died(event)
         return
     end
 
-    local ic = IC.get()
+    local valid_types = IC.get_types()
 
-    if entity.type == 'car' or entity.name == 'spidertron' then
+    if (valid_types[entity.type] or valid_types[entity.name]) then
+        local ic = IC.get()
         Functions.kill_car(ic, entity)
-    end
-
-    if entity.name == 'sand-rock-big' then
-        Functions.infinity_scrap(ic, event, true)
     end
 end
 
@@ -35,16 +32,12 @@ local function on_player_mined_entity(event)
         return
     end
 
-    local ic = IC.get()
+    local valid_types = IC.get_types()
 
-    Minimap.kill_minimap(game.players[event.player_index])
-
-    if entity.type == 'car' or entity.name == 'spidertron' then
+    if (valid_types[entity.type] or valid_types[entity.name]) then
+        local ic = IC.get()
+        Minimap.kill_minimap(game.players[event.player_index])
         Functions.save_car(ic, event)
-    end
-
-    if entity.name == 'sand-rock-big' then
-        Functions.infinity_scrap(ic, event)
     end
 end
 
@@ -54,14 +47,12 @@ local function on_robot_mined_entity(event)
     if not entity and not entity.valid then
         return
     end
-    local ic = IC.get()
 
-    if entity.type == 'car' or entity.name == 'spidertron' then
+    local valid_types = IC.get_types()
+
+    if (valid_types[entity.type] or valid_types[entity.name]) then
+        local ic = IC.get()
         Functions.kill_car(ic, entity)
-    end
-
-    if entity.name == 'sand-rock-big' then
-        Functions.infinity_scrap(ic, event, true)
     end
 end
 
@@ -71,7 +62,10 @@ local function on_built_entity(event)
     if not ce or not ce.valid then
         return
     end
-    if not ce.type == 'car' or not ce.name == 'spidertron' then
+
+    local valid_types = IC.get_types()
+
+    if (valid_types[ce.type] or valid_types[ce.name]) ~= true then
         return
     end
 
@@ -93,11 +87,10 @@ local function on_player_driving_changed_state(event)
 end
 
 local function on_tick()
-    local ic = IC.get()
     local tick = game.tick
 
-    if tick % 60 == 0 then
-        Functions.item_transfer(ic)
+    if tick % 10 == 1 then
+        Functions.item_transfer()
     end
 
     if tick % 240 == 0 then
@@ -105,7 +98,7 @@ local function on_tick()
     end
 
     if tick % 400 == 0 then
-        Functions.remove_invalid_cars(ic)
+        Functions.remove_invalid_cars()
     end
 end
 
@@ -143,9 +136,15 @@ local function on_gui_opened(event)
         return
     end
 
+    local surface_index = car.surface
+    local surface = game.surfaces[surface_index]
+    if not surface or not surface.valid then
+        return
+    end
+
     Minimap.minimap(
         game.players[event.player_index],
-        car.surface,
+        surface,
         {
             car.area.left_top.x + (car.area.right_bottom.x - car.area.left_top.x) * 0.5,
             car.area.left_top.y + (car.area.right_bottom.y - car.area.left_top.y) * 0.5
@@ -180,21 +179,30 @@ local function trigger_on_player_kicked_from_surface(data)
     Functions.kick_player_from_surface(this, player, target)
 end
 
-local function on_player_created(event)
-    local player = game.players[event.player_index]
-    player.gui.top.style = 'slot_table_spacing_horizontal_flow'
-    player.gui.left.style = 'slot_table_spacing_vertical_flow'
-end
-
 local function on_init()
     Public.reset()
+end
+
+local function on_gui_switch_state_changed(event)
+    local element = event.element
+    local player = game.players[event.player_index]
+    if not (player and player.valid) then
+        return
+    end
+
+    if not element.valid then
+        return
+    end
+
+    if element.name == 'ic_auto_switch' then
+        Minimap.toggle_auto(player)
+    end
 end
 
 local changed_surface = Minimap.changed_surface
 
 Event.on_init(on_init)
 Event.add(defines.events.on_tick, on_tick)
-Event.add(defines.events.on_player_created, on_player_created)
 Event.add(defines.events.on_gui_opened, on_gui_opened)
 Event.add(defines.events.on_gui_closed, on_gui_closed)
 Event.add(defines.events.on_player_driving_changed_state, on_player_driving_changed_state)
@@ -205,4 +213,6 @@ Event.add(defines.events.on_robot_mined_entity, on_robot_mined_entity)
 Event.add(defines.events.on_gui_click, on_gui_click)
 Event.add(defines.events.on_player_changed_surface, changed_surface)
 Event.add(IC.events.on_player_kicked_from_surface, trigger_on_player_kicked_from_surface)
+Event.add(defines.events.on_gui_switch_state_changed, on_gui_switch_state_changed)
+
 return Public

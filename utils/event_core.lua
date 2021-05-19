@@ -5,39 +5,51 @@ local Public = {}
 
 local init_event_name = -1
 local load_event_name = -2
+local configuration_changed_name = -3
 
 -- map of event_name to handlers[]
 local event_handlers = {}
 -- map of nth_tick to handlers[]
 local on_nth_tick_event_handlers = {}
 
-local pcall = pcall
+--[[ local interface = {
+    get_handler = function()
+        return event_handlers
+    end
+}
+
+if not remote.interfaces['interface'] then
+    remote.add_interface('interface', interface)
+end ]]
+local xpcall = xpcall
+local trace = debug.traceback
 local log = log
 local script_on_event = script.on_event
 local script_on_nth_tick = script.on_nth_tick
+local script_on_configuration_changed = script.on_configuration_changed
 
-local call_handlers
-if _DEBUG then
-    function call_handlers(handlers, event)
+local function handler_error(err)
+    log('\n\t' .. trace(err))
+end
+
+local function call_handlers(handlers, event)
+    if _DEBUG then
         for i = 1, #handlers do
             local handler = handlers[i]
             handler(event)
         end
-    end
-else
-    function call_handlers(handlers, event)
+    else
         for i = 1, #handlers do
-            local handler = handlers[i]
-            local success, error = pcall(handler, event)
-            if not success then
-                log(error)
-            end
+            xpcall(handlers[i], handler_error, event)
         end
     end
 end
 
 local function on_event(event)
     local handlers = event_handlers[event.name]
+    if not handlers then
+        handlers = event_handlers[event.input_name]
+    end
     call_handlers(handlers, event)
 end
 
@@ -59,6 +71,16 @@ local function on_load()
 
     event_handlers[init_event_name] = nil
     event_handlers[load_event_name] = nil
+
+    _LIFECYCLE = 8 -- Runtime
+end
+
+local function configuration_changed()
+    _LIFECYCLE = 7 -- config_change
+    local handlers = event_handlers[configuration_changed_name]
+    call_handlers(handlers)
+
+    event_handlers[configuration_changed_name] = nil
 
     _LIFECYCLE = 8 -- Runtime
 end
@@ -92,6 +114,20 @@ function Public.on_init(handler)
         table.insert(handlers, handler)
         if #handlers == 1 then
             script.on_init(on_init)
+        end
+    end
+end
+
+--- Do not use this function, use Event.on_configuration_changed instead as it has safety checks.
+function Public.on_configuration_changed(handler)
+    local handlers = event_handlers[configuration_changed_name]
+    if not handlers then
+        event_handlers[configuration_changed_name] = {handler}
+        script_on_configuration_changed(configuration_changed)
+    else
+        table.insert(handlers, handler)
+        if #handlers == 1 then
+            script.on_configuration_changed(configuration_changed)
         end
     end
 end

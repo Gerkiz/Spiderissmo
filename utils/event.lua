@@ -1,4 +1,6 @@
--- luacheck: globals script
+--luacheck: ignore function_table
+--luacheck: ignore function_nth_tick_table
+--luacheck: globals script
 --- This Module allows for registering multiple handlers to the same event, overcoming the limitation of script.register.
 --
 -- ** Event.add(event_name, handler) **
@@ -94,7 +96,6 @@
 --
 -- The table contains extra information that you want to pass to the handler.
 -- script.raise_event(event_id, {extra = 'data'})
-
 local EventCore = require 'utils.event_core'
 local Global = require 'utils.global'
 local Token = require 'utils.token'
@@ -105,10 +106,12 @@ local core_add = EventCore.add
 local core_on_init = EventCore.on_init
 local core_on_load = EventCore.on_load
 local core_on_nth_tick = EventCore.on_nth_tick
+local core_on_configuration_changed = EventCore.on_configuration_changed
 local stage_load = _STAGE.load
 local script_on_event = script.on_event
 local script_on_nth_tick = script.on_nth_tick
 local generate_event_name = script.generate_event_name
+
 local function_table = function_table
 local function_nth_tick_table = function_nth_tick_table
 
@@ -188,6 +191,16 @@ function Event.on_load(handler)
     end
 
     core_on_load(handler)
+end
+
+--- Register a handler for the script.on_configuration_changed event.
+-- @param handler<function>
+function Event.on_configuration_changed(handler)
+    if _LIFECYCLE == 8 then
+        error('Calling Event.on_configuration_changed after on_init() or on_load() has run is a desync risk.', 2)
+    end
+
+    core_on_configuration_changed(handler)
 end
 
 --- Register a handler for the nth_tick event.
@@ -278,10 +291,7 @@ function Event.add_removable_function(event_name, func, name)
     end
 
     if Debug.is_closure(f) then
-        error(
-            'func cannot be a closure as that is a desync risk. Consider using Event.add_removable(event, token) instead.',
-            2
-        )
+        error('func cannot be a closure as that is a desync risk. Consider using Event.add_removable(event, token) instead.', 2)
     end
 
     local funcs = function_handlers[name]
@@ -419,10 +429,7 @@ function Event.add_removable_nth_tick_function(tick, func, name)
     end
 
     if Debug.is_closure(f) then
-        error(
-            'func cannot be a closure as that is a desync risk. Consider using Event.add_removable_nth_tick(tick, token) instead.',
-            2
-        )
+        error('func cannot be a closure as that is a desync risk. Consider using Event.add_removable_nth_tick(tick, token) instead.', 2)
     end
 
     local funcs = function_nth_tick_handlers[name]
@@ -507,12 +514,6 @@ function Event.generate_event_name(name)
     return event_id
 end
 
-function Event.on_configuration_changed(func)
-    if type(func) == 'function' then
-        script.on_configuration_changed(func)
-    end
-end
-
 function Event.add_event_filter(event, filter)
     local current_filters = script.get_event_filter(event)
 
@@ -584,6 +585,7 @@ end
 
 core_on_init(add_handlers)
 core_on_load(add_handlers)
+core_on_configuration_changed(add_handlers)
 function_table = {}
 function_nth_tick_table = {}
 

@@ -1,6 +1,6 @@
 {
   "name": "Spiderissmo",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "title": "Spiderissmo",
   "author": "Gerkiz",
   "contact": "Gerkiz#0001",
@@ -8,5 +8,5 @@
   "dependencies": [
     "base >= 0.17"
   ],
-  "factorio_version": "1.0"
+  "factorio_version": "1.1"
 }

@@ -11,13 +11,15 @@ Global.register(
 
 local Public = {
     events = {
-        on_player_kicked_from_surface = Event.generate_event_name('on_player_kicked_from_surface')
+        on_player_kicked_from_surface = Event.generate_event_name('on_player_kicked_from_surface'),
+        used_car_door = Event.generate_event_name('used_car_door')
     }
 }
 
 function Public.reset()
     if this.surfaces then
-        for k, surface in pairs(this.surfaces) do
+        for k, index in pairs(this.surfaces) do
+            local surface = game.surfaces[index]
             if surface and surface.valid then
                 game.delete_surface(surface)
             end
@@ -30,6 +32,8 @@ function Public.reset()
     this.restore_on_theft = false
     this.doors = {}
     this.cars = {}
+    this.current_car_index = nil
+    this.renders = {}
     this.saved_surfaces = {}
     this.allowed_surface = 'nauvis'
     this.trust_system = {}
@@ -52,6 +56,21 @@ end
 
 function Public.get(key)
     if key then
+        return this[key]
+    else
+        return this
+    end
+end
+
+function Public.get_types()
+    return this.entity_type
+end
+
+function Public.set(key, value)
+    if key and (value or value == false) then
+        this[key] = value
+        return this[key]
+    elseif key then
         return this[key]
     else
         return this
