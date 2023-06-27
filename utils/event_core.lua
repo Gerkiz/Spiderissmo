@@ -12,15 +12,6 @@ local event_handlers = {}
 -- map of nth_tick to handlers[]
 local on_nth_tick_event_handlers = {}
 
---[[ local interface = {
-    get_handler = function()
-        return event_handlers
-    end
-}
-
-if not remote.interfaces['interface'] then
-    remote.add_interface('interface', interface)
-end ]]
 local xpcall = xpcall
 local trace = debug.traceback
 local log = log
@@ -33,13 +24,11 @@ local function handler_error(err)
 end
 
 local function call_handlers(handlers, event)
-    if _DEBUG then
-        for i = 1, #handlers do
+    for i = 1, #handlers do
+        if _DEBUG then
             local handler = handlers[i]
             handler(event)
-        end
-    else
-        for i = 1, #handlers do
+        else
             xpcall(handlers[i], handler_error, event)
         end
     end
@@ -93,6 +82,7 @@ end
 --- Do not use this function, use Event.add instead as it has safety checks.
 function Public.add(event_name, handler)
     local handlers = event_handlers[event_name]
+
     if not handlers then
         event_handlers[event_name] = {handler}
         script_on_event(event_name, on_event)

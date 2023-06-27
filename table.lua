@@ -18,7 +18,7 @@ local Public = {
 
 function Public.reset()
     if this.surfaces then
-        for k, index in pairs(this.surfaces) do
+        for _, index in pairs(this.surfaces) do
             local surface = game.surfaces[index]
             if surface and surface.valid then
                 game.delete_surface(surface)
@@ -35,11 +35,15 @@ function Public.reset()
     this.current_car_index = nil
     this.renders = {}
     this.saved_surfaces = {}
+    this.surfaces_deleted_by_button = {}
     this.allowed_surface = 'nauvis'
     this.trust_system = {}
     this.players = {}
+    this.players_persistent = {}
+    this.player_gui_data = {}
     this.surfaces = {}
     this.minimap = {}
+    this.misc_settings = {}
     this.entity_type = {
         ['car'] = true,
         ['tank'] = true,

@@ -21,8 +21,7 @@ local function on_entity_died(event)
     local valid_types = IC.get_types()
 
     if (valid_types[entity.type] or valid_types[entity.name]) then
-        local ic = IC.get()
-        Functions.kill_car(ic, entity)
+        Functions.kill_car(entity)
     end
 end
 
@@ -35,9 +34,8 @@ local function on_player_mined_entity(event)
     local valid_types = IC.get_types()
 
     if (valid_types[entity.type] or valid_types[entity.name]) then
-        local ic = IC.get()
         Minimap.kill_minimap(game.players[event.player_index])
-        Functions.save_car(ic, event)
+        Functions.save_car(event)
     end
 end
 
@@ -51,8 +49,7 @@ local function on_robot_mined_entity(event)
     local valid_types = IC.get_types()
 
     if (valid_types[entity.type] or valid_types[entity.name]) then
-        local ic = IC.get()
-        Functions.kill_car(ic, entity)
+        Functions.kill_car(entity)
     end
 end
 
@@ -74,22 +71,38 @@ local function on_built_entity(event)
         return
     end
 
-    local ic = IC.get()
-    Functions.create_car(ic, event)
+    Functions.create_car(event)
 end
 
 local function on_player_driving_changed_state(event)
-    local ic = IC.get()
     local player = game.players[event.player_index]
 
-    Functions.use_door_with_entity(ic, player, event.entity)
-    Functions.validate_owner(ic, player, event.entity)
+    Functions.use_door_with_entity(player, event.entity)
+    Functions.validate_owner(player, event.entity)
+end
+
+local function on_player_died(event)
+    local player = game.get_player(event.player_index)
+    if not player or not player.valid then
+        return
+    end
+
+    Functions.on_player_died(player)
+end
+
+local function on_player_respawned(event)
+    local player = game.get_player(event.player_index)
+    if not player or not player.valid then
+        return
+    end
+
+    Functions.on_player_respawned(player)
 end
 
 local function on_tick()
     local tick = game.tick
 
-    if tick % 10 == 1 then
+    if tick % 30 == 1 then
         Functions.item_transfer()
     end
 
@@ -113,12 +126,21 @@ local function on_gui_closed(event)
     if not entity.unit_number then
         return
     end
-    local ic = IC.get()
-    if not ic.cars[entity.unit_number] then
+    local cars = IC.get('cars')
+    if not cars[entity.unit_number] then
         return
     end
 
-    Minimap.kill_minimap(game.players[event.player_index])
+    local player = game.get_player(event.player_index)
+    if not player or not player.valid then
+        return
+    end
+
+    if player.controller_type == defines.controllers.spectator then
+        return
+    end
+
+    Minimap.kill_minimap(player)
 end
 
 local function on_gui_opened(event)
@@ -130,9 +152,18 @@ local function on_gui_opened(event)
     if not entity.unit_number then
         return
     end
-    local ic = IC.get()
-    local car = ic.cars[entity.unit_number]
+    local cars = IC.get('cars')
+    local car = cars[entity.unit_number]
     if not car then
+        return
+    end
+
+    local player = game.get_player(event.player_index)
+    if not player or not player.valid then
+        return
+    end
+
+    if player.controller_type == defines.controllers.spectator then
         return
     end
 
@@ -143,7 +174,7 @@ local function on_gui_opened(event)
     end
 
     Minimap.minimap(
-        game.players[event.player_index],
+        player,
         surface,
         {
             car.area.left_top.x + (car.area.right_bottom.x - car.area.left_top.x) * 0.5,
@@ -175,8 +206,7 @@ end
 local function trigger_on_player_kicked_from_surface(data)
     local player = data.player
     local target = data.target
-    local this = data.this
-    Functions.kick_player_from_surface(this, player, target)
+    Functions.kick_player_from_surface(player, target)
 end
 
 local function on_init()
@@ -209,6 +239,8 @@ Event.add(defines.events.on_player_driving_changed_state, on_player_driving_chan
 Event.add(defines.events.on_entity_died, on_entity_died)
 Event.add(defines.events.on_built_entity, on_built_entity)
 Event.add(defines.events.on_player_mined_entity, on_player_mined_entity)
+Event.add(defines.events.on_player_died, on_player_died)
+Event.add(defines.events.on_player_respawned, on_player_respawned)
 Event.add(defines.events.on_robot_mined_entity, on_robot_mined_entity)
 Event.add(defines.events.on_gui_click, on_gui_click)
 Event.add(defines.events.on_player_changed_surface, changed_surface)
