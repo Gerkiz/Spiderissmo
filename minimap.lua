@@ -26,13 +26,13 @@ end
 local function create_button(player)
     local button =
         player.gui.top.add(
-        {
-            type = 'sprite-button',
-            name = 'minimap_button',
-            sprite = 'utility/map',
-            tooltip = 'Open or close minimap.'
-        }
-    )
+            {
+                type = 'sprite-button',
+                name = 'minimap_button',
+                sprite = 'utility/map',
+                tooltip = 'Open or close minimap.'
+            }
+        )
     button.visible = false
 end
 
@@ -97,12 +97,6 @@ local function kill_frame(player)
 end
 
 local function draw_minimap(player, surface, position)
-    local allowed_surface = ICT.get('allowed_surface')
-    surface = surface or game.surfaces[allowed_surface]
-    if not surface or not surface.valid then
-        return
-    end
-
     local cars = ICT.get('cars')
 
     local entity = Functions.get_entity_from_player_surface(cars, player)
@@ -118,7 +112,13 @@ local function draw_minimap(player, surface, position)
     local player_data = get_player_data(player)
     local frame = player.gui.left.minimap_toggle_frame
     if not frame then
-        frame = player.gui.left.add({type = 'frame', direction = 'vertical', name = 'minimap_toggle_frame', caption = 'Minimap'})
+        frame = player.gui.left.add({
+            type = 'frame',
+            direction = 'vertical',
+            name = 'minimap_toggle_frame',
+            caption =
+            'Minimap'
+        })
     end
     frame.visible = true
     if not frame.ic_auto_switch then
@@ -128,8 +128,8 @@ local function draw_minimap(player, surface, position)
                 name = 'ic_auto_switch',
                 switch_state = player_data.state,
                 allow_none_state = false,
-                left_label_caption = {'gui.map_on'},
-                right_label_caption = {'gui.map_off'}
+                left_label_caption = { 'gui.map_on' },
+                right_label_caption = { 'gui.map_off' }
             }
         )
     end
@@ -137,15 +137,15 @@ local function draw_minimap(player, surface, position)
     if not element then
         element =
             player.gui.left.minimap_toggle_frame.add(
-            {
-                type = 'camera',
-                name = 'minimap_frame',
-                position = position,
-                surface_index = surface.index,
-                zoom = player_data.zoom,
-                tooltip = 'LMB: Increase zoom level.\nRMB: Decrease zoom level.\nMMB: Toggle camera size.'
-            }
-        )
+                {
+                    type = 'camera',
+                    name = 'minimap_frame',
+                    position = position,
+                    surface_index = entity.surface.index,
+                    zoom = player_data.zoom,
+                    tooltip = 'LMB: Increase zoom level.\nRMB: Decrease zoom level.\nMMB: Toggle camera size.'
+                }
+            )
         element.style.margin = 1
         element.style.minimal_height = player_data.map_size
         element.style.minimal_width = player_data.map_size
@@ -227,8 +227,7 @@ function Public.changed_surface(event)
         return
     end
 
-    local allowed_surface = ICT.get('allowed_surface')
-    local surface = game.surfaces[allowed_surface]
+    local surface = player.surface
     if not surface or not surface.valid then
         return
     end

@@ -36,7 +36,6 @@ function Public.reset()
     this.renders = {}
     this.saved_surfaces = {}
     this.surfaces_deleted_by_button = {}
-    this.allowed_surface = 'nauvis'
     this.trust_system = {}
     this.players = {}
     this.players_persistent = {}
@@ -51,10 +50,10 @@ function Public.reset()
         ['spider-vehicle'] = true
     }
     this.car_areas = {
-        ['car'] = {left_top = {x = -20, y = 0}, right_bottom = {x = 20, y = 20}},
-        ['tank'] = {left_top = {x = -30, y = 0}, right_bottom = {x = 30, y = 40}},
-        ['spidertron'] = {left_top = {x = -40, y = 0}, right_bottom = {x = 40, y = 60}},
-        ['spider-vehicle'] = {left_top = {x = -40, y = 0}, right_bottom = {x = 40, y = 60}}
+        ['car'] = { left_top = { x = -20, y = 0 }, right_bottom = { x = 20, y = 20 } },
+        ['tank'] = { left_top = { x = -30, y = 0 }, right_bottom = { x = 30, y = 40 } },
+        ['spidertron'] = { left_top = { x = -40, y = 0 }, right_bottom = { x = 40, y = 60 } },
+        ['spider-vehicle'] = { left_top = { x = -40, y = 0 }, right_bottom = { x = 40, y = 60 } }
     }
 end
 
@@ -87,13 +86,6 @@ function Public.set_car_area(tbl)
     end
 
     this.car_areas = tbl
-end
-
-function Public.allowed_surface(value)
-    if value then
-        this.allowed_surface = value
-    end
-    return this.allowed_surface
 end
 
 return Public
