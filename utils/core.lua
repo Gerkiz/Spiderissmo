@@ -4,7 +4,6 @@ local Color = require 'utils.color_presets'
 
 -- localized functions
 local random = math.random
-local sqrt = math.sqrt
 local floor = math.floor
 local format = string.format
 local match = string.match
@@ -22,13 +21,6 @@ local ticks_to_hours = 1 / hours_to_ticks
 -- local vars
 local Public = {}
 
---- Measures distance between pos1 and pos2
-function Public.distance(pos1, pos2)
-    local dx = pos2.x - pos1.x
-    local dy = pos2.y - pos1.y
-    return sqrt(dx * dx + dy * dy)
-end
-
 --- Takes msg and prints it to all players except provided player
 -- @param msg <string|table> table if locale is used
 -- @param player <LuaPlayer> the player not to send the message to
@@ -43,6 +35,18 @@ function Public.print_except(msg, player, color)
             p.print(msg, color)
         end
     end
+end
+
+function Public.get_filters(points)
+    local filters = {}
+    for _, section in pairs(points.sections) do
+        for _, filter in pairs(section.filters) do
+            if filter and filter.value and filter.value.name then
+                filters[#filters + 1] = filter
+            end
+        end
+    end
+    return filters
 end
 
 function Public.print_to(player_ident, msg, color)
@@ -102,6 +106,61 @@ function Public.get_actor()
     return '<server>'
 end
 
+--- Iterates over all connected players
+---@param callback function
+function Public.iter_connected_players(callback)
+    local players = game.connected_players
+    for i = 1, #players do
+        local player = players[i]
+        if player and player.valid then
+            callback(player, i)
+        end
+    end
+end
+
+--- Iterates over all connected players
+---@param callback function
+function Public.iter_fake_connected_players(players, callback)
+    for i = 1, #players do
+        local player = players[i]
+        if player and player.valid then
+            callback(player, i)
+        end
+    end
+end
+
+--- Iterates over all players
+---@param callback function
+function Public.iter_players(callback)
+    local players = game.players
+    for i = 1, #players do
+        local player = players[i]
+        if player and player.valid then
+            callback(player)
+        end
+    end
+end
+
+function Public.output_message(value, color, player)
+    color = color and Color[color] or Color.white
+
+    player = player or game.player
+
+    local message = value and type(value) == 'table' and serpent.block(value) or value or
+        type(value) == 'userdata' and 'Cannot output userdata' or 'Cannot output nil'
+
+    if player then
+        player = player and type(player) == 'number' and game.get_player(player) and game.get_player(player).valid or
+            player and player.valid and player or false
+        if not player then
+            error('Given player is not valid.', 2)
+        end
+
+        player.play_sound { path = 'utility/scenario_message' }
+        player.print(message, color)
+    end
+end
+
 function Public.cast_bool(var)
     if var then
         return true
@@ -114,17 +173,13 @@ function Public.find_entities_by_last_user(player, surface, filters)
     if type(player) == 'string' or not player then
         error(
             "bad argument #1 to '" ..
-                debug.getinfo(1, 'n').name .. "' (number or LuaPlayer expected, got " .. type(player) .. ')',
-            1
-        )
+            debug.getinfo(1, 'n').name .. "' (number or LuaPlayer expected, got " .. type(player) .. ')', 1)
         return
     end
     if type(surface) ~= 'table' and type(surface) ~= 'number' then
         error(
             "bad argument #2 to '" ..
-                debug.getinfo(1, 'n').name .. "' (number or LuaSurface expected, got " .. type(surface) .. ')',
-            1
-        )
+            debug.getinfo(1, 'n').name .. "' (number or LuaSurface expected, got " .. type(surface) .. ')', 1)
         return
     end
     local entities = {}
@@ -178,6 +233,67 @@ function Public.format_time(ticks)
     return concat(result, ' ')
 end
 
+--- Takes a time and returns it in days, hours, minutes etc.
+function Public.get_formatted_playtime(ticks)
+    if ticks < 5184000 then
+        local y = ticks / 216000
+        y = tostring(y)
+        local h = ''
+        for i = 1, 10, 1 do
+            local z = string.sub(y, i, i)
+
+            if z == '.' then
+                break
+            else
+                h = h .. z
+            end
+        end
+
+        local m = ticks % 216000
+        m = m / 3600
+        m = floor(m)
+        m = tostring(m)
+
+        if h == '0' then
+            local str = m .. ' minutes'
+            return str
+        else
+            local str = h .. ' hours '
+            str = str .. m
+            str = str .. ' minutes'
+            return str
+        end
+    else
+        local y = ticks / 5184000
+        y = tostring(y)
+        local h = ''
+        for i = 1, 10, 1 do
+            local z = string.sub(y, i, i)
+
+            if z == '.' then
+                break
+            else
+                h = h .. z
+            end
+        end
+
+        local m = ticks % 5184000
+        m = m / 216000
+        m = floor(m)
+        m = tostring(m)
+
+        if h == '0' then
+            local str = m .. ' days'
+            return str
+        else
+            local str = h .. ' days '
+            str = str .. m
+            str = str .. ' hours'
+            return str
+        end
+    end
+end
+
 --- Prints a message letting the player know they cannot run a command
 -- @param name string name of the command
 function Public.cant_run(name)
@@ -189,9 +305,9 @@ end
 -- @param command the command's name as table element
 -- @param parameters the command's parameters as a table (optional)
 function Public.log_command(actor, command, parameters)
-    local action = concat {'[Admin-Command] ', actor, ' used: ', command}
+    local action = concat { '[Admin-Command] ', actor, ' used: ', command }
     if parameters then
-        action = concat {action, ' ', parameters}
+        action = concat { action, ' ', parameters }
     end
     print(action)
 end
@@ -216,7 +332,7 @@ end
 
 --- Returns a random RGB color as a table
 function Public.random_RGB()
-    return {r = random(0, 255), g = random(0, 255), b = random(0, 255)}
+    return { r = random(0, 255), g = random(0, 255), b = random(0, 255) }
 end
 
 --- Sets a table element to value while also returning value.
@@ -231,57 +347,69 @@ end
 
 --- Takes msg and prints it to all players. Also prints to the log and discord
 -- @param msg <string> The message to print
--- @param warning_prefix <string> The name of the module/warning
-function Public.action_warning(warning_prefix, msg)
+-- @param warning_prefixes <string> The name of the module/warning
+function Public.action_warning(warning_prefixes, msg)
     game.print(prefix .. msg, Color.yellow)
-    msg = format('%s %s', warning_prefix, msg)
+    msg = format('%s %s', warning_prefixes, msg)
+    print(msg)
+end
+
+--- Takes msg and prints it to all admin players
+-- @param msg <string> The message to print
+function Public.action_notify_admins(msg)
+    for _, p in pairs(game.connected_players) do
+        if p.admin then
+            p.print(msg, Color.yellow)
+        end
+    end
     print(msg)
 end
 
 --- Takes msg and prints it to all players. Also prints to the log and discord
 -- @param msg <string> The message to print
--- @param warning_prefix <string> The name of the module/warning
-function Public.action_warning_embed(warning_prefix, msg)
+-- @param warning_prefixes <string> The name of the module/warning
+function Public.action_warning_embed(warning_prefixes, msg)
     game.print(prefix .. msg, Color.yellow)
-    msg = format('%s %s', warning_prefix, msg)
+    msg = format('%s %s', warning_prefixes, msg)
     print(msg)
 end
 
 --- Takes msg and prints it to the log and discord.
 -- @param msg <string> The message to print
--- @param warning_prefix <string> The name of the module/warning
-function Public.action_to_discord(warning_prefix, msg)
-    msg = format('%s %s', warning_prefix, msg)
+-- @param warning_prefixes <string> The name of the module/warning
+function Public.action_to_discord(warning_prefixes, msg)
+    msg = format('%s %s', warning_prefixes, msg)
     print(msg)
 end
 
 --- Takes msg and prints it to all players except provided player. Also prints to the log and discord
 -- @param msg <string> The message to print
--- @param warning_prefix <string> The name of the module/warning
+-- @param warning_prefixes <string> The name of the module/warning
 -- @param player <LuaPlayer> the player not to send the message to
-function Public.silent_action_warning(warning_prefix, msg, player)
+function Public.silent_action_warning(warning_prefixes, msg, player)
     Public.print_except(prefix .. msg, player, Color.yellow)
-    msg = format('%s %s', warning_prefix, msg)
+    msg = format('%s %s', warning_prefixes, msg)
     print(msg)
 end
 
 --- Takes msg and logs it.
 -- @param msg <string> The message to print
--- @param warning_prefix <string> The name of the module/warning
-function Public.log_msg(warning_prefix, msg)
-    msg = format('%s %s', warning_prefix, msg)
+-- @param warning_prefixes <string> The name of the module/warning
+function Public.log_msg(warning_prefixes, msg)
+    msg = format('%s %s', warning_prefixes, msg)
     print(msg)
 end
 
 --- Takes a string, number, or LuaPlayer and returns a valid LuaPlayer or nil.
 -- Intended for commands as there are extra checks in place.
 -- @param <string|number|LuaPlayer>
+-- @param <boolean>
 -- @return <LuaPlayer|nil> <string|nil> <number|nil> the LuaPlayer, their name, and their index
-function Public.validate_player(player_ident)
+function Public.validate_player(player_ident, check_admin)
     local data_type = type(player_ident)
     local player
 
-    if data_type == 'table' and player_ident.valid then
+    if data_type == 'userdata' and player_ident.valid then
         local is_player = player_ident.is_player()
         if is_player then
             player = player_ident
@@ -294,6 +422,12 @@ function Public.validate_player(player_ident)
 
     if not player or not player.valid then
         return
+    end
+
+    if check_admin then
+        if not player.admin then
+            return
+        end
     end
 
     return player, player.name, player.index
@@ -314,10 +448,5 @@ Public.move_position = util.moveposition
 -- @param direction <defines.direction> north, east, south, west, northeast, northwest, southeast, southwest
 -- @return <number> representing the direction
 Public.opposite_direction = util.oppositedirection
-
---- Takes the string of a module and returns whether is it available or not
--- @param name <string> the name of the module (ex. 'utils.core')
--- @return <boolean>
-Public.is_module_available = util.ismoduleavailable
 
 return Public

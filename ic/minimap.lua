@@ -1,8 +1,13 @@
 local Public = {}
 
-local ICT = require 'table'
-local Functions = require 'functions'
-local Gui = require 'gui'
+local ICT = require 'ic.table'
+local Functions = require 'ic.functions'
+local Gui = require 'ic.gui'
+local CoreGui = require 'utils.gui'
+
+local function get_top_frame_custom(player, name)
+    return player.gui.top[name]
+end
 
 local function validate_player(player)
     if not player then
@@ -23,28 +28,38 @@ local function validate_player(player)
     return true
 end
 
+local function get_top_frame(player)
+    return player.gui.top['minimap_button']
+end
+
 local function create_button(player)
     local button =
+        player.gui.top['minimap_button'] or
         player.gui.top.add(
             {
                 type = 'sprite-button',
                 name = 'minimap_button',
                 sprite = 'utility/map',
-                tooltip = 'Open or close minimap.'
+                tooltip = 'Open or close minimap.',
+                style = CoreGui.button_style
             }
         )
-    button.visible = false
+    button.style.minimal_height = 38
+    button.style.maximal_height = 38
 end
 
 function Public.toggle_button(player)
-    if not player.gui.top['minimap_button'] then
+    if not get_top_frame(player) then
         create_button(player)
     end
-    local button = player.gui.top['minimap_button']
+
+    local button = get_top_frame(player)
     if Functions.get_player_surface(player) then
-        button.visible = true
+        create_button(player)
     else
-        button.visible = false
+        if button and button.valid then
+            button.destroy()
+        end
     end
 end
 
@@ -97,6 +112,12 @@ local function kill_frame(player)
 end
 
 local function draw_minimap(player, surface, position)
+    local allowed_surface = ICT.get('allowed_surface')
+    surface = surface or game.surfaces[allowed_surface]
+    if not surface or not surface.valid then
+        return
+    end
+
     local cars = ICT.get('cars')
 
     local entity = Functions.get_entity_from_player_surface(cars, player)
@@ -141,7 +162,7 @@ local function draw_minimap(player, surface, position)
                     type = 'camera',
                     name = 'minimap_frame',
                     position = position,
-                    surface_index = entity.surface.index,
+                    surface_index = surface.index,
                     zoom = player_data.zoom,
                     tooltip = 'LMB: Increase zoom level.\nRMB: Decrease zoom level.\nMMB: Toggle camera size.'
                 }
@@ -168,7 +189,7 @@ function Public.minimap(player, surface, position)
 end
 
 function Public.update_minimap()
-    for k, player in pairs(game.connected_players) do
+    for _, player in pairs(game.connected_players) do
         local player_data = get_player_data(player)
         if Functions.get_player_surface(player) and player.gui.left.minimap_toggle_frame and player_data.auto then
             kill_frame(player)
@@ -227,12 +248,13 @@ function Public.changed_surface(event)
         return
     end
 
-    local surface = player.surface
+    local allowed_surface = ICT.get('allowed_surface')
+    local surface = game.surfaces[allowed_surface]
     if not surface or not surface.valid then
         return
     end
-    local wd = player.gui.top['wave_defense']
-    local diff = player.gui.top['difficulty_gui']
+    local wd = get_top_frame_custom(player, 'wave_defense')
+    local diff = get_top_frame_custom(player, 'difficulty_gui')
     local player_data = get_player_data(player)
 
     if Functions.get_player_surface(player) then
@@ -247,7 +269,7 @@ function Public.changed_surface(event)
         if diff and diff.visible then
             diff.visible = false
         end
-    elseif player.surface.index == surface.index then
+    elseif player.physical_surface.index == surface.index then
         Gui.remove_toolbar(player)
         Public.toggle_button(player)
         kill_minimap(player)

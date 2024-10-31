@@ -61,15 +61,15 @@
 -- local Event = require 'utils.event'
 --
 -- If you want to remove the handler you will need to keep a reference to it.
--- global.handler = function(event)
+-- storage.handler = function(event)
 --     game.print(serpent.block(event)) -- prints the content of the event table to console.
 -- end
 --
 -- The below code would typically be used at the command console.
--- Event.add_removable_function(defines.events.on_built_entity, global.handler)
+-- Event.add_removable_function(defines.events.on_built_entity, storage.handler)
 --
 -- When you no longer need the handler.
--- Event.remove_removable_function(defines.events.on_built_entity, global.handler)
+-- Event.remove_removable_function(defines.events.on_built_entity, storage.handler)
 --
 -- ** Other Events **
 --
@@ -307,7 +307,9 @@ function Event.add_removable_function(event_name, func, name)
     end
 
     if Debug.is_closure(f) then
-        error('func cannot be a closure as that is a desync risk. Consider using Event.add_removable(event, token) instead.', 2)
+        error(
+            'func cannot be a closure as that is a desync risk. Consider using Event.add_removable(event, token) instead.',
+            2)
     end
 
     local funcs = function_handlers[name]
@@ -316,7 +318,7 @@ function Event.add_removable_function(event_name, func, name)
         funcs = function_handlers[name]
     end
 
-    funcs[#funcs + 1] = {event_name = event_name, handler = func}
+    funcs[#funcs + 1] = { event_name = event_name, handler = func }
 
     local func_table = function_table[name]
     if not func_table then
@@ -324,7 +326,7 @@ function Event.add_removable_function(event_name, func, name)
         func_table = function_table[name]
     end
 
-    func_table[#func_table + 1] = {event_name = event_name, handler = f}
+    func_table[#func_table + 1] = { event_name = event_name, handler = f }
 
     if handlers_added then
         core_add(event_name, f)
@@ -386,7 +388,7 @@ function Event.add_removable_nth_tick(tick, token)
 
     local tokens = token_nth_tick_handlers[tick]
     if not tokens then
-        token_nth_tick_handlers[tick] = {token}
+        token_nth_tick_handlers[tick] = { token }
     else
         tokens[#tokens + 1] = token
     end
@@ -445,7 +447,9 @@ function Event.add_removable_nth_tick_function(tick, func, name)
     end
 
     if Debug.is_closure(f) then
-        error('func cannot be a closure as that is a desync risk. Consider using Event.add_removable_nth_tick(tick, token) instead.', 2)
+        error(
+            'func cannot be a closure as that is a desync risk. Consider using Event.add_removable_nth_tick(tick, token) instead.',
+            2)
     end
 
     local funcs = function_nth_tick_handlers[name]
@@ -454,7 +458,7 @@ function Event.add_removable_nth_tick_function(tick, func, name)
         funcs = function_nth_tick_handlers[name]
     end
 
-    funcs[#funcs + 1] = {tick = tick, handler = func}
+    funcs[#funcs + 1] = { tick = tick, handler = func }
 
     local func_table = function_nth_tick_table[name]
     if not func_table then
@@ -462,7 +466,7 @@ function Event.add_removable_nth_tick_function(tick, func, name)
         func_table = function_nth_tick_table[name]
     end
 
-    func_table[#func_table + 1] = {tick = tick, handler = f}
+    func_table[#func_table + 1] = { tick = tick, handler = f }
 
     if handlers_added then
         core_on_nth_tick(tick, f)
@@ -534,7 +538,7 @@ function Event.add_event_filter(event, filter)
     local current_filters = get_event_filter(event)
 
     if not current_filters then
-        current_filters = {filter}
+        current_filters = { filter }
     else
         table.insert(current_filters, filter)
     end
@@ -568,7 +572,7 @@ local function add_handlers()
                 func_handler = function_table[name]
             end
 
-            func_handler[#func_handler + 1] = {event_name = e_name, handler = handler}
+            func_handler[#func_handler + 1] = { event_name = e_name, handler = handler }
             core_add(e_name, handler)
         end
     end
@@ -591,7 +595,7 @@ local function add_handlers()
                 func_handler = function_nth_tick_table[name]
             end
 
-            func_handler[#func_handler + 1] = {tick = tick, handler = handler}
+            func_handler[#func_handler + 1] = { tick = tick, handler = handler }
             core_on_nth_tick(tick, handler)
         end
     end

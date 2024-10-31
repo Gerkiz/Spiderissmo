@@ -4,7 +4,7 @@ local Event = require 'utils.event'
 local this = {}
 Global.register(
     this,
-    function(tbl)
+    function (tbl)
         this = tbl
     end
 )
@@ -18,7 +18,7 @@ local Public = {
 
 function Public.reset()
     if this.surfaces then
-        for _, index in pairs(this.surfaces) do
+        for k, index in pairs(this.surfaces) do
             local surface = game.surfaces[index]
             if surface and surface.valid then
                 game.delete_surface(surface)
@@ -36,6 +36,7 @@ function Public.reset()
     this.renders = {}
     this.saved_surfaces = {}
     this.surfaces_deleted_by_button = {}
+    this.allowed_surface = 'nauvis'
     this.trust_system = {}
     this.players = {}
     this.players_persistent = {}
@@ -57,6 +58,9 @@ function Public.reset()
     }
 end
 
+---Fetches a value from the table.
+---@param key any
+---@return any
 function Public.get(key)
     if key then
         return this[key]
@@ -86,6 +90,13 @@ function Public.set_car_area(tbl)
     end
 
     this.car_areas = tbl
+end
+
+function Public.allowed_surface(value)
+    if value then
+        this.allowed_surface = value
+    end
+    return this.allowed_surface
 end
 
 return Public

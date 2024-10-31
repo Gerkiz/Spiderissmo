@@ -10,10 +10,10 @@ local Debug = {}
 
 ---@return number next index
 local function increment()
-    global.debug_message_count = global.debug_message_count or {}
+    storage.debug_message_count = storage.debug_message_count or {}
 
-    local next = global.debug_message_count + 1
-    global.debug_message_count = next
+    local next = storage.debug_message_count + 1
+    storage.debug_message_count = next
 
     return next
 end
@@ -131,14 +131,6 @@ end
 ---@param message string
 function Debug.print_position(position, message)
     Debug.print(format('%s %s', serialize(position), message))
-end
-
----Executes the given callback if cheating is enabled.
----@param callback function
-function Debug.cheat(callback)
-    if _CHEATS then
-        callback()
-    end
 end
 
 --- Returns true if the function is a closure, false otherwise.
