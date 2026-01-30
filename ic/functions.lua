@@ -1135,7 +1135,13 @@ function Public.create_room_surface(car)
     surface.request_to_generate_chunks({ 16, 16 }, 1)
     surface.force_generate_chunk_requests()
     exclude_surface(surface)
-    for _, tile in pairs(surface.find_tiles_filtered({ area = { { -2, -2 }, { 2, 2 } } })) do
+    for _, tile in pairs(surface.find_tiles_filtered({ area = { { -20, -2 }, { 20, 2 } } })) do
+        surface.set_tiles({ { name = 'out-of-map', position = tile.position } }, true)
+    end
+    for _, tile in pairs(surface.find_tiles_filtered({ area = { { -21, -1 }, { -21, 4 } } })) do
+        surface.set_tiles({ { name = 'out-of-map', position = tile.position } }, true)
+    end
+    for _, tile in pairs(surface.find_tiles_filtered({ area = { { 20, -1 }, { 20, 4 } } })) do
         surface.set_tiles({ { name = 'out-of-map', position = tile.position } }, true)
     end
     local surfaces = IC.get('surfaces')
@@ -1158,11 +1164,6 @@ function Public.create_car_room(car)
 
     for x = area.left_top.x, area.right_bottom.x - 1, 1 do
         for y = area.left_top.y + 2, area.right_bottom.y - 3, 1 do
-            tiles[#tiles + 1] = { name = main_tile_name, position = { x, y } }
-        end
-    end
-    for x = -3, 2, 1 do
-        for y = area.right_bottom.y - 4, area.right_bottom.y - 2, 1 do
             tiles[#tiles + 1] = { name = main_tile_name, position = { x, y } }
         end
     end
